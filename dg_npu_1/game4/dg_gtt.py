@@ -31,19 +31,7 @@ def ws_sender_thread():
         try:
             print("尝试连接 WebSocket 服务器:", uri)
             with connect(uri) as websocket:
-                print("dg_dds 已连接 WebSocket 服务器")
-
-                # ✅ 新增：连接成功后先清空积压的旧消息，避免前端重连时收到旧状态
-                cleared = 0
-                while not ws_send_queue.empty():
-                    try:
-                        ws_send_queue.get_nowait()
-                        cleared += 1
-                    except:
-                        break
-                if cleared > 0:
-                    print(f"[dg_dds] 清空积压消息 {cleared} 条，避免旧状态误触")
-
+                print("dg_gtt 已连接 WebSocket 服务器")
                 while True:
                     msg = ws_send_queue.get()
                     if msg is None:
