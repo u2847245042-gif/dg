@@ -13,18 +13,28 @@ ws_send_queue = queue.Queue()
 ip_id = 8766
 def ws_sender_thread():
     """后台线程：维持一个 WebSocket 连接，持续发送队列里的消息"""
-    uri = f"ws://127.0.0.1:{ip_id}"   # 如果前端在别的机器，这里改成 RK3588 的 IP
+    uri = f"ws://127.0.0.1:{ip_id}"
     while True:
         try:
             print("尝试连接 WebSocket 服务器:", uri)
             with connect(uri) as websocket:
                 print("dg_dds 已连接 WebSocket 服务器")
 
+                # ✅ 新增：连接成功后先清空积压的旧消息，避免前端重连时收到旧状态
+                cleared = 0
+                while not ws_send_queue.empty():
+                    try:
+                        ws_send_queue.get_nowait()
+                        cleared += 1
+                    except:
+                        break
+                if cleared > 0:
+                    print(f"[dg_dds] 清空积压消息 {cleared} 条，避免旧状态误触")
+
                 while True:
-                    # 阻塞到有消息要发送
                     msg = ws_send_queue.get()
                     if msg is None:
-                        break  # 预留退出用
+                        break
                     try:
                         websocket.send(msg)
                     except Exception as e:
