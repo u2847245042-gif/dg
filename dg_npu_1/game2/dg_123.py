@@ -442,8 +442,10 @@ while True:
                 r_wr = kpts[10]
 
                 # Check left hand (wrist above shoulder -> smaller y)
-                l_raised = (l_wr[1] < l_sh[1]) and (l_wr[1] > 0) and (l_sh[1] > 0)
-                r_raised = (r_wr[1] < r_sh[1]) and (r_wr[1] > 0) and (r_sh[1] > 0)
+                scores = person["scores"]
+                CONF = 0.5
+                l_raised = (l_wr[1] < l_sh[1]) and scores[9] > CONF and scores[5] > CONF
+                r_raised = (r_wr[1] < r_sh[1]) and scores[10] > CONF and scores[6] > CONF
 
                 if l_raised or r_raised:
                     marked_ids.add(pid)
