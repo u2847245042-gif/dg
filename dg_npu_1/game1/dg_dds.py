@@ -363,7 +363,7 @@ rects = load_rects_from_json(json_path)
 drawing_new = False
 temp_start = (-1, -1)
 temp_end = (-1, -1)
-conf_number = 0.15
+conf_number = 0.4
 # ==========================================================
 cap = cv2.VideoCapture(video_path)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
@@ -486,8 +486,10 @@ while True:
                     r_wr = kpts[10]
 
                     # Check left hand (wrist above shoulder -> smaller y)
-                    l_raised = (l_wr[1] < l_sh[1]) and (l_wr[1] > 0) and (l_sh[1] > 0)
-                    r_raised = (r_wr[1] < r_sh[1]) and (r_wr[1] > 0) and (r_sh[1] > 0)
+                    scores = person["scores"]
+                    CONF = 0.5
+                    l_raised = (l_wr[1] < l_sh[1]) and scores[9] > CONF and scores[5] > CONF
+                    r_raised = (r_wr[1] < r_sh[1]) and scores[10] > CONF and scores[6] > CONF
 
                     if l_raised or r_raised:
                         marked_ids.add(in_rect_id)
@@ -507,7 +509,7 @@ while True:
                 min_cutoff=1.0,
                 beta=0.05,
                 d_cutoff=1.0,
-                conf_thresh=0.15,
+                conf_thresh=0.4,
                 max_jump=100
             )
 

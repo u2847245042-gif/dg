@@ -35,7 +35,7 @@ rects = load_rects_from_json(json_path)
 drawing_new = False
 temp_start = (-1, -1)
 temp_end = (-1, -1)
-conf_number = 0.15
+conf_number = 0.4
 
 # 修正：初始化全局变量
 last_confirm_time = 0.0
@@ -164,6 +164,14 @@ def detect_hand_confirm(track_id, kpts, game_id_to_confirm):
     if shoulder_width < 30:
         hand_confirm_frame_count[track_id] = 0
         return False
+
+    CONF_THRESH = 0.5
+    key_indices = [0, 5, 6, 9, 10]  # nose, left_shoulder, right_shoulder, left_wrist, right_wrist
+    for ki in key_indices:
+        kp = kpts[ki]
+        if len(kp) >= 3 and float(kp[2]) < CONF_THRESH:
+            hand_confirm_frame_count[track_id] = 0
+            return False
 
     # 判断是否举手
     left_raised  = left_wrist_y  < left_shoulder_y  and left_wrist_y  < nose_y
@@ -485,14 +493,16 @@ async def capture_and_infer():
                 kpts = person["kpts"]
                 for rect in rects:
                     rect.in_if = False
+                found = False
                 for rid, rect in enumerate(rects, 1):
                     if are_both_feet_in_rect(kpts, rect):
                         rect.in_if = True
                         person["rect_id"] = rid
                         in_persons.append(person)
+                        found = True
                         break
-                    else:
-                        out_persons.append(person)
+                if not found:
+                    out_persons.append(person)
             for p in in_persons:
                 h = compute_hist(frame, p["bbox"])
                 if h is not None:
@@ -697,7 +707,11 @@ async def stop_ext_script():
     # 给操作系统足够的时间来完成硬件驱动层面的资源释放
     print("进程已清理。等待 1.5 秒以便系统释放摄像头资源...")
     await asyncio.sleep(1.5)
-
+    # 清空所有跨局状态，防止残留数据误触
+    hand_confirm_frame_count.clear()
+    hand_confirm_last_trigger.clear()
+    pose_history.clear()
+    kpt_filters_bank.clear()
     camera_paused = False  # 现在才设置标志，触发摄像头恢复
     print("标志已设置，主循环将尝试重新打开摄像头。")
 
